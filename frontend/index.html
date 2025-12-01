@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bar Chart Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .chartContainer {
+            width: 80%;
+            margin: auto;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Rate of StackOverflow Questions / Year</h2>
+    <div class="chartContainer">
+        <canvas id="barChart"></canvas>
+    </div>
+    <h2>Top 10 Tags Frequency (2022–2024)</h2>
+    <canvas id="languageChart" width="800" height="400"></canvas>
+
+
+    <script>
+        const ctx = document.getElementById('languageChart').getContext('2d');
+
+        function getColor(index) {
+            const colors = [
+                '#3366CC', '#DC3912', '#FF9900', '#109618', '#990099',
+                '#3B3EAC', '#0099C6', '#DD4477', '#66AA00', '#B82E2E',
+                '#316395', '#994499', '#22AA99', '#AAAA11', '#6633CC'
+            ];
+            return colors[index % colors.length];
+        }
+
+
+        fetch('https://premshankar.pythonanywhere.com/top-tags')
+            .then(response => response.json())
+            .then(data => {
+                const years = ['2022', '2023', '2024'];
+                const languages = Object.keys(data[years[0]]);
+
+                const datasets = languages.map((lang, index) => ({
+                    label: lang,
+                    data: years.map(year => data[year][lang]),
+                    borderColor: getColor(index),
+                    backgroundColor: getColor(index),
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3
+                }));
+
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: years,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Stack Overflow Language Frequency (2022–2024)'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+
+        async function fetchBarChartData() {
+            try {
+                const response = await fetch("https://premshankar.pythonanywhere.com/api/chart-data");
+                const data = await response.json();
+                renderBarChart(data.labels, data.values);
+            } catch (error) {
+                console.error("Error fetching chart data:", error);
+            }
+        }
+
+        function renderBarChart(labels, values) {
+            const ctx = document.getElementById("barChart").getContext("2d");
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Bar Chart",
+                        data: values,
+                        backgroundColor: "rgba(54, 162, 235, 0.6)",
+                        borderColor: "rgba(54, 162, 235, 1)",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        fetchBarChartData();
+    </script>
+</body>
+
+</html>
